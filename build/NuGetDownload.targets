@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">  
+  <!-- 
+  Support for downloading NuGet.exe on demand, based on NuGet's own nuget.targets   
+  -->
+  
+  <Target Name="_WixNuGetPackager_DownloadNuGet">
+      <_WixNuGetPackager_DownloadNuGet OutputFilename="$(_WixNuGetPackager_DownloadedNuGetExePath)" Condition=" '$(WixNuGetPackagerDownloadNuGetExe)' == 'true' AND !Exists('$(_WixNuGetPackager_DownloadedNuGetExePath)')" />
+  </Target>
+    
+  <UsingTask TaskName="_WixNuGetPackager_DownloadNuGet" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
+      <ParameterGroup>
+          <OutputFilename ParameterType="System.String" Required="true" />
+      </ParameterGroup>
+      <Task>
+          <Reference Include="System.Core" />
+          <Using Namespace="System" />
+          <Using Namespace="System.IO" />
+          <Using Namespace="System.Net" />
+          <Using Namespace="Microsoft.Build.Framework" />
+          <Using Namespace="Microsoft.Build.Utilities" />
+          <Code Type="Fragment" Language="cs">
+              <![CDATA[
+              try {
+                  OutputFilename = Path.GetFullPath(OutputFilename);
+
+                  Log.LogMessage("Downloading latest version of NuGet.exe...");
+                  WebClient webClient = new WebClient();
+                  webClient.DownloadFile("https://www.nuget.org/nuget.exe", OutputFilename);
+
+                  return true;
+              }
+              catch (Exception ex) {
+                  Log.LogErrorFromException(ex);
+                  return false;
+              }
+          ]]>
+          </Code>
+      </Task>
+  </UsingTask>
+
+</Project>

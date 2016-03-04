@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!--
+  Style note:
+  
+  Properties, items and targets named with an underscore ('_') prefix are considered internal and not inteded for reference
+  outside this file. Other propeties, items and targets are intented to be set or referenced elsewhere, as appropriate.    
+  -->
+    
+  <PropertyGroup>
+    <WixNuGetPackagerEnabled Condition=" $(WixNuGetPackagerEnabled) == '' ">true</WixNuGetPackagerEnabled>
+    <WixNuGetPackagerOutputDirectory Condition=" $(WixNuGetPackagerOutputDirectory) == '' ">$(OutDir)</WixNuGetPackagerOutputDirectory>
+    <WixNuGetPackagerCopyOutputToOutputDirectory Condition=" $(WixNuGetPackagerCopyOutputToOutputDirectory) == '' ">true</WixNuGetPackagerCopyOutputToOutputDirectory>    
+    <WixNuGetPackagerDownloadNuGetExe Condition=" $(WixNuGetPackagerDownloadNuGetExe) == '' and $(WixNuGetPackagerNuGetExePath) == '' ">true</WixNuGetPackagerDownloadNuGetExe>
+    <WixNuGetPackagerDownloadNuGetExe Condition=" $(WixNuGetPackagerDownloadNuGetExe) == '' and $(WixNuGetPackagerNuGetExePath) != '' ">false</WixNuGetPackagerDownloadNuGetExe>
+    <!-- Emulate the defaulting behaviour from Microsoft.Common.targets. This is used when copying files to output. -->
+    <SkipCopyUnchangedFiles Condition="'$(SkipCopyUnchangedFiles)' == ''">true</SkipCopyUnchangedFiles>
+  </PropertyGroup>
+  
+  <!-- Initialize various internal properties. -->
+  <PropertyGroup>
+    <_WixNuGetPackager_IntermediateDirectory>$(MSBuildProjectDirectory)\$(IntermediateOutputPath)_WixNuGetPackager\</_WixNuGetPackager_IntermediateDirectory>   
+    <_WixNuGetPackager_IntermediateNuGetPackOutputDirectory>$(_WixNuGetPackager_IntermediateDirectory)PackOutput\</_WixNuGetPackager_IntermediateNuGetPackOutputDirectory>
+    <_WixNuGetPackager_EmitDirectory>$(MSBuildThisFileDirectory)..\tools\emit\</_WixNuGetPackager_EmitDirectory>
+    <_WixNuGetPackager_DownloadedNuGetExePath>$(MSBuildThisFileDirectory)..\tools\nuget.exe</_WixNuGetPackager_DownloadedNuGetExePath>
+    <_WixNuGetPackager_PackageCreatedSuccessFile>$(_WixNuGetPackager_IntermediateDirectory)PackageCreated.success</_WixNuGetPackager_PackageCreatedSuccessFile>
+    <_WixNuGetPackager_PackageIdDotTargetsFile>$(_WixNuGetPackager_EmitDirectory)build\package_id.targets</_WixNuGetPackager_PackageIdDotTargetsFile>    
+  </PropertyGroup>
+
+  <!-- Compute and initialize various configuration properties and items that can reasonably depend on preceding target execution,
+       validate basic configuration, ensure directories we may write to exist. -->
+  <PropertyGroup>
+    <WixNuGetPackagerPrepareDependsOn/>
+  </PropertyGroup>
+  <Target
+    Name="WixNuGetPackagerPrepare"
+    DependsOnTargets="$(WixNuGetPackagerPrepareDependsOn)"
+    Condition=" $(WixNuGetPackagerEnabled) == 'true' ">
+  
+    <Error
+      Condition=" $(WixTargetsPath) == '' and $(WixNuGetPackagerDisableWixTargetsPathCheck) != 'true' "
+      Text="This does not appear to be a WiX project. The WixNuGetPackager NuGet package can only be installed in WiX projects." />
+      
+    <Error
+      Condition=" $(OutputType) != 'Library' "
+      Text="WixNuGetPackager does not (yet) support WiX package types other than Library (ie, wixlib)"/>
+    
+    <Error
+      Condition=" $(WixNuGetPackagerDownloadNuGetExe) != 'true' and !Exists( '$(WixNuGetPackagerNuGetExePath)' ) "
+      Text="The nuget.exe path configured by the WixNuGetPackagerNuGetExePath property, '$(WixNuGetPackagerNuGetExePath)', could not be found. You must set WixNuGetPackagerNuGetExePath or set WixNuGetPackagerDownloadNuGetExe to 'true'."/>
+    
+    <!--
+    Note: The following comment and task call is based on NuGet's standard NuGet.targets
+    
+    Take advantage of MsBuild's build dependency tracking to make sure that we only ever download nuget.exe once.
+    This effectively acts as a lock that makes sure that the download operation will only happen once and all
+    parallel builds will have to wait for it to complete.
+    -->
+    <MsBuild 
+      Targets="_WixNuGetPackager_DownloadNuGet" 
+      Projects="$(MSBuildThisFileDirectory)NuGetDownload.targets" 
+      Properties="Configuration=NOT_IMPORTANT;WixNuGetPackagerDownloadNuGetExe=$(WixNuGetPackagerDownloadNuGetExe);_WixNuGetPackager_DownloadedNuGetExePath=$(_WixNuGetPackager_DownloadedNuGetExePath)" />
+    
+    <Warn
+      Condition=" $(OutputType) != 'Library' and $(LibBindFiles) != 'true' "
+      Text="Library file binding is not enabled. Any referenced files (including custom action DLLs) will not be available to consumers of the generated nuget package." />
+    
+    <ItemGroup>
+      <_WixNuGetPackager_MetadataNuspecContentItems
+        Include="@(Content)"
+        Condition=" '%(Content.Filename)' == 'NuGetPackageMetadata' and '%(Content.Extension)' == '.nuspec' "/>
+    </ItemGroup>
+    
+    <PropertyGroup>
+      <WixNuGetPackageId Condition=" $(WixNuGetPackageId) == '' ">$(OutputName)</WixNuGetPackageId>    
+      <WixNuGetPackagerNuGetExePath Condition=" $(WixNuGetPackagerDownloadNuGetExe) == 'true' ">$(_WixNuGetPackager_DownloadedNuGetExePath)</WixNuGetPackagerNuGetExePath>
+      <_WixNuGetPackager_NuGetCommand Condition=" '$(OS)' == 'Windows_NT'">"$(WixNuGetPackagerNuGetExePath)"</_WixNuGetPackager_NuGetCommand>
+      <_WixNuGetPackager_NuGetCommand Condition=" '$(OS)' != 'Windows_NT' ">mono --runtime=v4.0.30319 "$(WixNuGetPackagerNuGetExePath)"</_WixNuGetPackager_NuGetCommand>
+      <_WixNuGetPackager_MetadataNuspecContentItems>@(_WixNuGetPackager_MetadataNuspecContentItems->'%(FullPath)')</_WixNuGetPackager_MetadataNuspecContentItems>
+      <_WixNuGetPackager_MetadataNuspecContentItems_HasMultiple Condition=" $(_WixNuGetPackager_MetadataNuspecContentItems.IndexOf(';')) &gt; -1 ">true</_WixNuGetPackager_MetadataNuspecContentItems_HasMultiple>
+      <WixNuGetPackagerMetadataNuspecFilePath Condition=" $(WixNuGetPackagerMetadataNuspecFilePath) == '' and $(_WixNuGetPackager_MetadataNuspecContentItems) != '' and $(_WixNuGetPackager_MetadataNuspecContentItems_HasMultiple) != 'true' ">$(_WixNuGetPackager_MetadataNuspecContentItems)</WixNuGetPackagerMetadataNuspecFilePath>
+      <_WixNuGetPackager_RenamedPackageIdDotTargetsFile>$(_WixNuGetPackager_IntermediateDirectory)$(WixNuGetPackageId).targets</_WixNuGetPackager_RenamedPackageIdDotTargetsFile>
+      <_WixNuGetPackager_GeneratedNuspecFile>$(_WixNuGetPackager_IntermediateDirectory)$(WixNuGetPackageId).nuspec</_WixNuGetPackager_GeneratedNuspecFile>
+    </PropertyGroup>
+        
+    <Error
+      Condition=" $(WixNuGetPackagerMetadataNuspecFilePath) != '' and !Exists( '$(WixNuGetPackagerMetadataNuspecFilePath)' ) "
+      Text="The file referenced by WixNuGetPackagerMetadataNuspecFilePath, '$(WixNuGetPackagerMetadataNuspecFilePath)', does not exist."/>
+          
+    <Error
+      Condition=" $(WixNuGetPackagerMetadataNuspecFilePath) == '' "
+      Text="You must provide NuGet package metadata for the generated package in a nuspec file. Either add a content item with filename 'NuGetPackageMetadata.nuspec' to the project, or set property WixNuGetPackagerMetadataNuspecFilePath. A template nuspec file can be found at: $([System.IO.Path]::GetFullPath( '$(MSBuildThisFileDirectory)\..\tools\NuGetPackageMetadata.nuspec' ))" />
+      
+    <MakeDir
+      Directories="$(_WixNuGetPackager_IntermediateDirectory)"
+      Condition=" !Exists( '$(_WixNuGetPackager_IntermediateDirectory)' ) "/>
+      
+    <MakeDir
+      Directories="$(_WixNuGetPackager_IntermediateNuGetPackOutputDirectory)"
+      Condition=" !Exists( '$(_WixNuGetPackager_IntermediateNuGetPackOutputDirectory)' ) "/>
+      
+    <MakeDir
+      Directories="$(WixNuGetPackagerOutputDirectory)"
+      Condition=" !Exists( '$(WixNuGetPackagerOutputDirectory)' ) "/>
+
+  </Target>
+  
+  <!-- Copy the package_id.targets file to the intermediate directory, but renamed
+       with the actual package id. This file must be correctly named to be picked
+       up by nuget's automatic .props/.targets injection feature. -->       
+  <Target
+    Name="_WixNuGetPackager_CreateRenamedPackageIdDotTargetsFile" 
+    Inputs="$(_WixNuGetPackager_PackageIdDotTargetsFile)"
+    Outputs="$(_WixNuGetPackager_RenamedPackageIdDotTargetsFile)"
+    DependsOnTargets="WixNuGetPackagerPrepare"
+    BeforeTargets="_CleanGetCurrentAndPriorFileWrites"
+    Condition=" $(WixNuGetPackagerEnabled) == 'true' ">
+  
+    <Copy
+        SourceFiles="$(_WixNuGetPackager_PackageIdDotTargetsFile)"
+        DestinationFiles="$(_WixNuGetPackager_RenamedPackageIdDotTargetsFile)"
+        OverwriteReadOnlyFiles="true"
+        Retries="$(CopyRetryCount)"
+        RetryDelayMilliseconds="$(CopyRetryDelayMilliseconds)"
+        UseHardlinksIfPossible="$(CreateHardLinksForCopyFilesToOutputDirectoryIfPossible)">
+
+      <Output TaskParameter="DestinationFiles" ItemName="FileWrites"/>
+
+    </Copy>
+
+  </Target>
+
+  <!-- Create the nuspec file that will be used to create the nuget package. -->
+  <Target
+    Name="_WixNuGetPackager_CreateNuspecFile" 
+    Inputs="$(WixNuGetPackagerMetadataNuspecFilePath)"
+    Outputs="$(_WixNuGetPackager_GeneratedNuspecFile)"
+    DependsOnTargets="WixNuGetPackagerPrepare"
+    BeforeTargets="_CleanGetCurrentAndPriorFileWrites"
+    Condition=" $(WixNuGetPackagerEnabled) == 'true' ">
+
+    <XmlPeek 
+      XmlInputPath="$(WixNuGetPackagerMetadataNuspecFilePath)"
+      Query="/package/metadata[1]">
+             
+      <Output TaskParameter="Result"
+              ItemName="_WixNuGetPackager_MetadataElement" />
+    </XmlPeek>
+
+    <PropertyGroup>
+      <_WixNuGetPackager_MetadataElement>
+        @(_WixNuGetPackager_MetadataElement)
+      </_WixNuGetPackager_MetadataElement>
+    </PropertyGroup>
+    
+    <Error
+      Condition=" $(_WixNuGetPackager_MetadataElement) == '' "
+      Text="The nuspec file '$(WixNuGetPackagerMetadataNuspecFilePath)' does not contain a &lt;metadata> element." />
+
+    <!-- Construct nuspec xml -->
+    <PropertyGroup>
+      <_WixNuGetPackager_NuspecXml>
+        <package xmlns="">
+          $(_WixNuGetPackager_MetadataElement)
+          <files>
+            <file src="$(TargetPath)" target="tools\payload\" />
+            <file src="$(_WixNuGetPackager_RenamedPackageIdDotTargetsFile)" target="build" />
+          </files>
+        </package>
+      </_WixNuGetPackager_NuspecXml>
+    </PropertyGroup>
+    
+    <WriteLinesToFile
+      File="$(_WixNuGetPackager_GeneratedNuspecFile)"
+      Lines="$(_WixNuGetPackager_NuspecXml)"
+      Overwrite="true"
+      Encoding="UTF-8" />
+    
+    <ItemGroup>
+      <FileWrites Include="$(_WixNuGetPackager_GeneratedNuspecFile)" />
+    </ItemGroup>
+    
+  </Target>
+  
+  <!-- Create the nuget package using 'nuget pack' -->
+  <Target 
+    Name="_WixNuGetPackager_CreatePackage"
+    Inputs="$(_WixNuGetPackager_GeneratedNuspecFile);$(_WixNuGetPackager_RenamedPackageIdDotTargetsFile);$(TargetPath)"
+    Outputs="$(_WixNuGetPackager_PackageCreatedSuccessFile)"
+    DependsOnTargets="
+      WixNuGetPackagerPrepare;
+      _WixNuGetPackager_CreateNuspecFile;
+      _WixNuGetPackager_CreateRenamedPackageIdDotTargetsFile"
+    BeforeTargets="_CleanGetCurrentAndPriorFileWrites"
+    Condition=" $(WixNuGetPackagerEnabled) == 'true' ">   
+    
+    <!-- Prepare properties for nuspec replacement tokens -->
+    <ItemGroup>
+      <_WixNuGetPackager_TokenProperty 
+        Include="id">
+        <Value>$(WixNuGetPackageId.Replace('"', '\"'))</Value>
+      </_WixNuGetPackager_TokenProperty>
+      <_WixNuGetPackager_TokenProperty 
+        Include="version"
+        Condition=" $(WixNuGetPackageVersion) != '' ">
+        <Value>$(WixNuGetPackageVersion.Replace('"', '\"'))</Value>
+      </_WixNuGetPackager_TokenProperty>
+      <_WixNuGetPackager_TokenProperty 
+        Include="author"
+        Condition=" $(WixNuGetPackageAuthor) != '' ">
+        <Value>$(WixNuGetPackageAuthor.Replace('"', '\"'))</Value>
+      </_WixNuGetPackager_TokenProperty>
+      <_WixNuGetPackager_TokenProperty 
+        Include="description"
+        Condition=" $(WixNuGetPackageDescription) != '' ">
+        <Value>$(WixNuGetPackageDescription.Replace('"', '\"'))</Value>
+      </_WixNuGetPackager_TokenProperty>
+    </ItemGroup>
+    
+    <PropertyGroup>
+      <_WixNuGetPackager_TokenProperties Condition=" '@(_WixNuGetPackager_TokenProperty)' != '' ">-Properties @(_WixNuGetPackager_TokenProperty->'%(Identity)="%(Value)"')</_WixNuGetPackager_TokenProperties>      
+      <_WixNuGetPackager_NonInteractiveSwitch Condition=" '$(VisualStudioVersion)' != '' AND '$(OS)' == 'Windows_NT' ">-NonInteractive</_WixNuGetPackager_NonInteractiveSwitch>
+      <_WixNuGetPackager_NuGetPackCommand>$(_WixNuGetPackager_NuGetCommand) pack "$(_WixNuGetPackager_GeneratedNuspecFile)" $(_WixNuGetPackager_TokenProperties) $(_WixNuGetPackager_NonInteractiveSwitch)</_WixNuGetPackager_NuGetPackCommand>
+    </PropertyGroup>
+    
+    <Exec
+      Command="$(_WixNuGetPackager_NuGetPackCommand)"
+      WorkingDirectory="$(_WixNuGetPackager_IntermediateNuGetPackOutputDirectory)"
+      Condition=" '$(OS)' != 'Windows_NT' " />
+
+    <Exec
+      Command="$(_WixNuGetPackager_NuGetPackCommand)"
+      WorkingDirectory="$(_WixNuGetPackager_IntermediateNuGetPackOutputDirectory)"
+      LogStandardErrorAsError="true"
+      Condition=" '$(OS)' == 'Windows_NT' " />
+
+    <ItemGroup>
+      <_WixNuGetPackager_NuGetPackIntermediateFiles Include="$(_WixNuGetPackager_IntermediateNuGetPackOutputDirectory)**" />
+      <FileWrites Include="@(_WixNuGetPackager_NuGetPackIntermediateFiles)" />
+    </ItemGroup>
+      
+    <ItemGroup>
+    
+      <WixNuGetPackageIntermediatePackage
+        Include="@(_WixNuGetPackager_NuGetPackIntermediateFiles)"
+        Condition=" '%(_WixNuGetPackager_NuGetPackIntermediateFiles.Extension)' == '.nupkg' " />
+    
+    </ItemGroup>
+    
+    <Touch
+      Files="$(_WixNuGetPackager_PackageCreatedSuccessFile)"
+      AlwaysCreate="true"/>      
+
+    <!-- Note: We don't use the TouchedFiles output property of the Touch task
+         as this won't add the file to FileWrites if this target is skipped during
+         incremental build. -->
+    <ItemGroup>
+      <FileWrites Include="$(_WixNuGetPackager_PackageCreatedSuccessFile)"/>
+    </ItemGroup>
+    
+  </Target>
+  
+  <!-- Copy the file(s) produced by 'nuget pack' to the required output directory. As per similar examples in 
+       Microsoft.Common.targets, this target is not "optimised" for incremental build using the Inputs and Outputs
+       attributes. However, SkipUnchangedFiles is 'true' by default, which has a similar effect. This arrangement
+       also ensures correct FileWrites behaviour. -->
+  <Target
+    Name="_WixNuGetPackager_CopyFilesToOutput"
+    DependsOnTargets="_WixNuGetPackager_CreatePackage"
+    Condition=" $(WixNuGetPackagerEnabled) == 'true' ">
+  
+    <Copy
+        SourceFiles="@(_WixNuGetPackager_NuGetPackIntermediateFiles)"
+        DestinationFolder="$(WixNuGetPackagerOutputDirectory)"
+        SkipUnchangedFiles="$(SkipCopyUnchangedFiles)"
+        OverwriteReadOnlyFiles="true"
+        Retries="$(CopyRetryCount)"
+        RetryDelayMilliseconds="$(CopyRetryDelayMilliseconds)"
+        UseHardlinksIfPossible="$(CreateHardLinksForCopyFilesToOutputDirectoryIfPossible)"
+        Condition=" $(WixNuGetPackagerCopyOutputToOutputDirectory) == 'true' ">
+
+      <Output TaskParameter="DestinationFiles" ItemName="WixNuGetPackagerOutputFiles"/>
+      <Output TaskParameter="DestinationFiles" ItemName="FileWrites"/>
+
+    </Copy>
+
+    <ItemGroup>
+    
+      <WixNuGetPackagerOutputPackage
+        Include="@(WixNuGetPackagerOutputFiles)"
+        Condition=" '%(WixNuGetPackagerOutputFiles.Extension)' == '.nupkg' " />
+    
+    </ItemGroup>
+    
+  </Target>
+  
+  <PropertyGroup>
+    <WixNuGetPackagerCreatePackageDependsOn>
+      $(WixNuGetPackagerCreatePackageDependsOn);
+      _WixNuGetPackager_CreatePackage;
+      _WixNuGetPackager_CopyFilesToOutput;    
+    </WixNuGetPackagerCreatePackageDependsOn>
+  </PropertyGroup>
+
+  <Target
+    Name="WixNuGetPackagerCreatePackage"
+    DependsOnTargets="$(WixNuGetPackagerCreatePackageDependsOn)" />
+    
+  <PropertyGroup>  
+    <BuildDependsOn>
+      WixNuGetPackagerPrepare;
+      $(BuildDependsOn);
+      WixNuGetPackagerCreatePackage
+    </BuildDependsOn>    
+  </PropertyGroup>
+  
+</Project>

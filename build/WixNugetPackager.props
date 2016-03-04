@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- We expect the following target to get overridden by the standard Wix target. If it doesn't,
+       something has changed with the Wix targets and we need to fix WixNugetPackager to suit. -->
+  <Target Name="_CleanGetCurrentAndPriorFileWrites">
+    <Error
+      Text="The _CleanGetCurrentAndPriorFileWrites target was not overridden as expected by the standard Wix target. WixNugetPackager needs to be updated or may require maintenance." />
+  </Target>
+</Project>
