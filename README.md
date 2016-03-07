@@ -12,7 +12,8 @@ WixNuGetPackager enables the distribution of Windows Installer XML (WiX) librari
 4. Navigate to the NuGet pacakges directory for your solution, typically `[solution_directory]\packages`.
 5. Navigate to `WixNuGetPackager.X.Y.Z\tools` (where X.Y.Z is the installed version of the `WixNuGetPackager` package).
 6. Ensure that the file type filter dropdown is set to `All files (*.*)`.
-7. Select the file `NuGetPackageMetadata.nuspec` and click `Add`.
+7. Select the file `NuGetPackageMetadata.nuspec.template` and click `Add`.
+7. Rename the added `NuGetPackageMetadata.nuspec.template` item to `NuGetPackageMetadata.nuspec`
 8. Modify the content of the `NuGetPackageMetadata.nuspec` file in your project to provide the metadata for your wixlib NuGet package.
 9. Build your project. By default, a copy of `nuget.exe` will be downloaded on the first build, and the generated NuGet pacakge will be copied to the project's output directory (for example, `bin\debug`). These behaviours can be changed, see *Configuration* below.
 

@@ -89,7 +89,7 @@
           
     <Error
       Condition=" $(WixNuGetPackagerMetadataNuspecFilePath) == '' "
-      Text="You must provide NuGet package metadata for the generated package in a nuspec file. Either add a content item with filename 'NuGetPackageMetadata.nuspec' to the project, or set property WixNuGetPackagerMetadataNuspecFilePath. A template nuspec file can be found at: $([System.IO.Path]::GetFullPath( '$(MSBuildThisFileDirectory)\..\tools\NuGetPackageMetadata.nuspec' ))" />
+      Text="You must provide NuGet package metadata for the generated package in a nuspec file. Either add a content item with filename 'NuGetPackageMetadata.nuspec' to the project, or set property WixNuGetPackagerMetadataNuspecFilePath. A template nuspec file can be found at: $([System.IO.Path]::GetFullPath( '$(MSBuildThisFileDirectory)\..\tools\NuGetPackageMetadata.nuspec.template' ))" />
       
     <MakeDir
       Directories="$(_WixNuGetPackager_IntermediateDirectory)"
