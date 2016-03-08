@@ -74,7 +74,7 @@ There is currently no configuration available for the build-time behaviour of pa
 
 This section is intended for advanced MSBuild users.
 
-Targets `WixNuGetPackagerPrepare` and `WixNuGetPackagerCreatePackage` are intended to be stable in name and function and can be referenced elsewhere. `$(WixNuGetPackagerPrepareDependsOn)` and `$(WixNuGetPackagerCreatePackageDependsOn)` are supported, but as per Microsoft convention, must be redefined *after* the import of `WixNuGetPackager.targets`.
+Targets `WixNuGetPackagerPrepare` and `WixNuGetPackagerCreatePackage` are intended to be stable in name and function and can be referenced elsewhere.
 
 If executed, target `WixNuGetPackagerCreatePackage`:
 * adds `@(WixNuGetPackageIntermediatePackage)` for the files output from `nuget pack` to the intermediate directory with extension `.nupkg`
@@ -88,6 +88,7 @@ WixNuGetPackager is licensed under the Apache License, Version 2.0 (the "License
 http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+
 ## Disclaimer
 This project was developed for in-house use at [Zany Ants](http://zanyants.com) with limited and specific use cases, and has been released publically in the hope that others will find it useful too. WixNuGetPackager has been tested with Visual Studio 2015, NuGet 2.8.7 and WiX 3.10.0. Your mileage with other versions may vary. It almost certainly will not work with versions of Visual Studio prior to 2010 (MSBuild 4.0 is required), or WiX versions prior to 3.x. It has been designed defensively for NuGet version 3.x, but this has not been tested.
 
