@@ -9,7 +9,6 @@
     
   <PropertyGroup>
     <WixNuGetPackagerEnabled Condition=" $(WixNuGetPackagerEnabled) == '' ">true</WixNuGetPackagerEnabled>
-    <WixNuGetPackagerOutputDirectory Condition=" $(WixNuGetPackagerOutputDirectory) == '' ">$(OutDir)</WixNuGetPackagerOutputDirectory>
     <WixNuGetPackagerCopyOutputToOutputDirectory Condition=" $(WixNuGetPackagerCopyOutputToOutputDirectory) == '' ">true</WixNuGetPackagerCopyOutputToOutputDirectory>    
     <WixNuGetPackagerDownloadNuGetExe Condition=" $(WixNuGetPackagerDownloadNuGetExe) == '' and $(WixNuGetPackagerNuGetExePath) == '' ">true</WixNuGetPackagerDownloadNuGetExe>
     <WixNuGetPackagerDownloadNuGetExe Condition=" $(WixNuGetPackagerDownloadNuGetExe) == '' and $(WixNuGetPackagerNuGetExePath) != '' ">false</WixNuGetPackagerDownloadNuGetExe>
@@ -29,14 +28,15 @@
 
   <!-- Compute and initialize various configuration properties and items that can reasonably depend on preceding target execution,
        validate basic configuration, ensure directories we may write to exist. -->
-  <PropertyGroup>
-    <WixNuGetPackagerPrepareDependsOn/>
-  </PropertyGroup>
   <Target
     Name="WixNuGetPackagerPrepare"
-    DependsOnTargets="$(WixNuGetPackagerPrepareDependsOn)"
+    BeforeTargets="Build"
     Condition=" $(WixNuGetPackagerEnabled) == 'true' ">
   
+    <PropertyGroup>
+      <WixNuGetPackagerOutputDirectory Condition=" $(WixNuGetPackagerOutputDirectory) == '' ">$(OutDir)</WixNuGetPackagerOutputDirectory>
+    </PropertyGroup>
+    
     <Error
       Condition=" $(WixTargetsPath) == '' and $(WixNuGetPackagerDisableWixTargetsPathCheck) != 'true' "
       Text="This does not appear to be a WiX project. The WixNuGetPackager NuGet package can only be installed in WiX projects." />
@@ -294,24 +294,12 @@
     
   </Target>
   
-  <PropertyGroup>
-    <WixNuGetPackagerCreatePackageDependsOn>
-      $(WixNuGetPackagerCreatePackageDependsOn);
-      _WixNuGetPackager_CreatePackage;
-      _WixNuGetPackager_CopyFilesToOutput;    
-    </WixNuGetPackagerCreatePackageDependsOn>
-  </PropertyGroup>
-
   <Target
     Name="WixNuGetPackagerCreatePackage"
-    DependsOnTargets="$(WixNuGetPackagerCreatePackageDependsOn)" />
-    
-  <PropertyGroup>  
-    <BuildDependsOn>
-      WixNuGetPackagerPrepare;
-      $(BuildDependsOn);
-      WixNuGetPackagerCreatePackage
-    </BuildDependsOn>    
-  </PropertyGroup>
-  
+    DependsOnTargets="
+      _WixNuGetPackager_CreatePackage;
+      _WixNuGetPackager_CopyFilesToOutput"
+    AfterTargets="Build"
+    Condition=" $(WixNuGetPackagerEnabled) == 'true' "/>
+
 </Project>
