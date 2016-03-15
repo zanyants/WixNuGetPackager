@@ -10,7 +10,7 @@
     <projectUrl>https://github.com/zanyants/WixNuGetPackager</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <summary>Enables distribution of Windows Installer XML (WiX) libraries using NuGet packages.</summary>
-    <description>WixNuGetPackager enables the distribution of Windows Installer XML (WiX) libraries using NuGet packages. WixNuGetPackager is itself distributed as a NuGet package which can be installed in WiX library projects. Once installed in a project, WixNuGetPackager extends the build process to generate a NuGet pacakge containing the compiled .wixlib. This generated NuGet package can then be distributed and added to other WiX projects.
+    <description>WixNuGetPackager enables the distribution of Windows Installer XML (WiX) libraries and extensions using NuGet packages. WixNuGetPackager is itself distributed as a NuGet package which can be installed in WiX library or extension projects. Once installed in a project, WixNuGetPackager extends the build process to generate a NuGet pacakge containing the compiled artefacts. This generated NuGet package can then be distributed and added to other WiX projects.
 </description>
     <copyright>Copyright 2016 Zany Ants</copyright>
     <tags>wix nuget wixlib library distribution packaging</tags>
