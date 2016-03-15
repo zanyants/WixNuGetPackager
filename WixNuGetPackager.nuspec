@@ -2,7 +2,7 @@
 <package>
   <metadata minClientVersion="2.5">
     <id>WixNuGetPackager</id>
-    <version>0.1.2</version>
+    <version>0.1.3</version>
     <title>WiX NuGet Packager</title>
     <authors>Zany Ants</authors>
     <owners>Zany Ants</owners>

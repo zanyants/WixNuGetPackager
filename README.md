@@ -1,12 +1,12 @@
 # WixNuGetPackager
 
-WixNuGetPackager enables the distribution of Windows Installer XML (WiX) libraries using NuGet packages. WixNuGetPackager is itself distributed as a NuGet package which can be installed in WiX library projects. Once installed in a project, WixNuGetPackager extends the build process to generate a NuGet pacakge containing the compiled .wixlib. This generated NuGet package can then be distributed and added to other WiX projects.
+WixNuGetPackager enables the distribution of Windows Installer XML (WiX) libraries and extensions using NuGet packages. WixNuGetPackager is itself distributed as a NuGet package which can be installed in WiX library or extension projects. Once installed in a project, WixNuGetPackager extends the build process to generate a NuGet pacakge containing the compiled artefacts. This generated NuGet package can then be distributed and added to other WiX projects.
 
 ## Using WixNuGetPackager
 
-### Creating a NuGet package for distributing a WiX library:
+### Creating a NuGet package for distributing a WiX library or extension:
 
-1. Install the `WixNuGetPackager` package from [nuget.org](https://www.nuget.org/packages/WixNuGetPackager/) to your WiX library project. With older versions of Visual Studio, you may need to close and reopen the containing solution for the build process extensions to take effect.
+1. Install the `WixNuGetPackager` package from [nuget.org](https://www.nuget.org/packages/WixNuGetPackager/) to your WiX library or extension project. With older versions of Visual Studio, you may need to close and reopen the containing solution for the build process extensions to take effect.
 2. In Visual Studio, in the Solution Explorer right click on your WiX library project.
 3. Select `Add...` -> `Existing item`
 4. Navigate to the NuGet pacakges directory for your solution, typically `[solution_directory]\packages`.
@@ -17,9 +17,19 @@ WixNuGetPackager enables the distribution of Windows Installer XML (WiX) librari
 8. Modify the content of the `NuGetPackageMetadata.nuspec` file in your project to provide the metadata for your wixlib NuGet package.
 9. Build your project. By default, a copy of `nuget.exe` will be downloaded on the first build, and the generated NuGet pacakge will be copied to the project's output directory (for example, `bin\debug`). These behaviours can be changed, see *Configuration* below.
 
-### Using a WiX library NuGet package
+### Extension packages
 
-To use a NuGet package created by WixNuGetPackager from a WiX library project (as above), just add the package to any WiX project that supports `WixLibrary` references. This has been tested with WiX Setup projects, but should also work with WiX Library and WiX Merge Module projects. The packages WixNuGetPackager creates also extend the build process, so with older versions of Visual Studio you may need to close and reopen the containing solution for the build process extensions to take effect.
+Certain conventions and limitations are assumed when packaging an extension project:
+
+* Referenced Wix libraries are ignored. They are assumed to be merged into the project's output assembly (typically as an embedded resource).
+* CustomAction DLLs are assumed to be linked into a Wix library, which will be ignored (see above).
+* Dependencies on arbitary .NET assemblies (eg, from outside the .NET framework) are currently not supported (it's up to you somehow merge them in to the project's output assembly, eg. ILMerge, EmbeddedResource + AssemblyResolve handler)
+* References to other NuGet packages are currently not supported, and will not be expressed as dependencies within the generated nuget package.
+* XML schemas are expected to be `EmbeddedResource` items with a `.xsd` extension. All such items will be added to the generated package and exposed to any project consuming the generated package. Schema-aware Intellisense should work. 
+
+### Using a WiX library or extension NuGet package
+
+To use a NuGet package created by WixNuGetPackager from a WiX library or extension project (as above), just add the package to any WiX project that supports `WixLibrary` or `WixExtension` references as appropriate. This has been tested with WiX Setup projects, but should also work with WiX Library and WiX Merge Module projects. The packages WixNuGetPackager creates also extend the build process, so with older versions of Visual Studio you may need to close and reopen the containing solution for the build process extensions to take effect.
 
 ## Configuration
 
