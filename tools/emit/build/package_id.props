@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <_WIXNUGETPACKAGER_IDPREFIX_PackageType>$$WIXNUGETPACKAGER_PACKAGETYPE$$</_WIXNUGETPACKAGER_IDPREFIX_PackageType>
+    <_WIXNUGETPACKAGER_IDPREFIX_PayloadDirectory>$(MSBuildThisFileDirectory)..\tools\payload\</_WIXNUGETPACKAGER_IDPREFIX_PayloadDirectory>
+    <_WIXNUGETPACKAGER_IDPREFIX_PayloadOutputDirectory>$(_WIXNUGETPACKAGER_IDPREFIX_PayloadDirectory)output\</_WIXNUGETPACKAGER_IDPREFIX_PayloadOutputDirectory>
+    <_WIXNUGETPACKAGER_IDPREFIX_PayloadSchemaDirectory>$(_WIXNUGETPACKAGER_IDPREFIX_PayloadDirectory)schema\</_WIXNUGETPACKAGER_IDPREFIX_PayloadSchemaDirectory>
+  </PropertyGroup>
+  <ItemGroup>
+    <_WIXNUGETPACKAGER_IDPREFIX_PayloadWixLibFiles Include="$(_WIXNUGETPACKAGER_IDPREFIX_PayloadOutputDirectory)*.wixlib" />
+    <_WIXNUGETPACKAGER_IDPREFIX_PayloadExtensionFiles Include="$(_WIXNUGETPACKAGER_IDPREFIX_PayloadOutputDirectory)*.dll" />
+    <Content
+      Include="$(_WIXNUGETPACKAGER_IDPREFIX_PayloadSchemaDirectory)**">
+      <Link>$$WIXNUGETPACKAGER_PACKAGEID$$ Schemas\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <Visible>True</Visible>
+    </Content>      
+  </ItemGroup>
+</Project>

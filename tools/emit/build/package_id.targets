@@ -1,18 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <PropertyGroup>
-    <_WixNugetPackagerEmit_PayloadDirectory>$(MSBuildThisFileDirectory)..\tools\payload\</_WixNugetPackagerEmit_PayloadDirectory>
-  </PropertyGroup>
-  <ItemGroup>
-    <_WixNugetPackagerEmit_PayloadWixLibFiles Include="$(_WixNugetPackagerEmit_PayloadDirectory)*.wixlib" />
-  </ItemGroup>
   <Target 
-    Name="_WixNugetPackagerEmit_AddPayloadItems"
-    BeforeTargets="Build">
-    <ItemGroup Condition=" '$(_WixNugetPackagerEmit_PayloadWixLibFiles)' != '' ">
-      <WixLibrary Include="$(_WixNugetPackagerEmit_PayloadWixLibFiles)">
+    Name="_WIXNUGETPACKAGER_IDPREFIX_AddPayloadItems"
+    BeforeTargets="PrepareForBuild">
+    <ItemGroup Condition=" '@(_WIXNUGETPACKAGER_IDPREFIX_PayloadWixLibFiles)' != '' ">
+      <WixLibrary Include="@(_WIXNUGETPACKAGER_IDPREFIX_PayloadWixLibFiles)">
         <Name>%(Filename)</Name>
       </WixLibrary>
+    </ItemGroup>
+    <ItemGroup Condition=" '@(_WIXNUGETPACKAGER_IDPREFIX_PayloadExtensionFiles)' != '' ">
+      <WixExtension Include="@(_WIXNUGETPACKAGER_IDPREFIX_PayloadExtensionFiles)">
+        <Name>%(Filename)</Name>
+      </WixExtension>    
     </ItemGroup>
   </Target>
 </Project>

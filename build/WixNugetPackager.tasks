@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <UsingTask
+    TaskName="_ReplaceTextTransform"
+    TaskFactory="CodeTaskFactory"
+    AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
+    <ParameterGroup>
+        <InputFiles ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true"/>
+        <OutputFiles ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true"/>
+        <Replacements ParameterType="Microsoft.Build.Framework.ITaskItem[]" />
+    </ParameterGroup>
+    <Task>
+        <Using Namespace="System.IO" />
+        <Using Namespace="System.Text" />
+        <Using Namespace="Microsoft.Build.Framework" />
+        <Code Type="Fragment"
+              Language="cs">
+            <![CDATA[
+       if ( InputFiles.Length != OutputFiles.Length )
+       {
+        Log.LogError("InputFiles and OutputFiles must contain the same number of items.");
+        return false;
+       }
+       int fileIndex = 0;
+       foreach (var fileItem in InputFiles )
+       {
+         var fileName = fileItem.GetMetadata("FullPath");
+         if ( !File.Exists(fileName))
+         {
+            Log.LogError("File not found: {0}", fileName);
+            return false;
+         }
+         var sb = new StringBuilder( File.ReadAllText(fileName) );
+         foreach(var item in Replacements)
+         {           
+           string find = item.GetMetadata("Find");
+           string replaceWith = item.GetMetadata("ReplaceWith");
+           if ( !string.IsNullOrEmpty( find ) )
+           {
+            sb.Replace( find, replaceWith );
+           }
+         }
+         File.WriteAllText( OutputFiles[fileIndex].GetMetadata("FullPath"), sb.ToString() );         
+         ++fileIndex;
+        }
+     ]]>
+        </Code>
+    </Task>
+  </UsingTask>
+</Project>
