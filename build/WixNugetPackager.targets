@@ -99,8 +99,8 @@
     </ItemGroup>
     
     <PropertyGroup>
-      <WixNuGetPackageId Condition=" $(WixNuGetPackageId) == '' and $(WixNuGetPackagerProjectType) == 'Library' ">$(OutputName)</WixNuGetPackageId>    
-      <WixNuGetPackageId Condition=" $(WixNuGetPackageId) == '' and $(WixNuGetPackagerProjectType) == 'Extension' ">$(AssemblyName)</WixNuGetPackageId>    
+      <WixNuGetPackageId Condition=" $(WixNuGetPackageId) == '' and $(WixNuGetPackagerProjectType) == 'Library' ">$(WixNuGetPackageIdPrefix)$(OutputName)$(WixNuGetPackageIdSuffix)</WixNuGetPackageId>    
+      <WixNuGetPackageId Condition=" $(WixNuGetPackageId) == '' and $(WixNuGetPackagerProjectType) == 'Extension' ">$(WixNuGetPackageIdPrefix)$(AssemblyName)$(WixNuGetPackageIdSuffix)</WixNuGetPackageId>    
       <WixNuGetPackagerNuGetExePath Condition=" $(WixNuGetPackagerDownloadNuGetExe) == 'true' ">$(_WixNuGetPackager_DownloadedNuGetExePath)</WixNuGetPackagerNuGetExePath>
       <_WixNuGetPackager_NuGetCommand Condition=" '$(OS)' == 'Windows_NT'">"$(WixNuGetPackagerNuGetExePath)"</_WixNuGetPackager_NuGetCommand>
       <_WixNuGetPackager_NuGetCommand Condition=" '$(OS)' != 'Windows_NT' ">mono --runtime=v4.0.30319 "$(WixNuGetPackagerNuGetExePath)"</_WixNuGetPackager_NuGetCommand>
