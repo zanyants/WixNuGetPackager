@@ -2,7 +2,7 @@
 <package>
   <metadata minClientVersion="2.5">
     <id>WixNuGetPackager</id>
-    <version>0.1.4</version>
+    <version>0.1.5</version>
     <title>WiX NuGet Packager</title>
     <authors>Zany Ants</authors>
     <owners>Zany Ants</owners>
@@ -14,7 +14,7 @@
 </description>
     <copyright>Copyright 2016 Zany Ants</copyright>
     <tags>wix nuget wixlib library extension distribution packaging</tags>
-    <releaseNotes>Prefix and suffix to be used with default-computed package id can now be specified with $(WixNuGetPackageIdPrefix) and $(WixNuGetPackageIdSuffix).</releaseNotes>
+    <releaseNotes>Prevent problems with concurrent nuget.exe download caused by MSBuild parallel invocation.</releaseNotes>
   </metadata>
   <files>
     <file src="build\**" target="build" />

@@ -4,8 +4,30 @@
   Support for downloading NuGet.exe on demand, based on NuGet's own nuget.targets   
   -->
   
-  <Target Name="_WixNuGetPackager_DownloadNuGet">
-      <_WixNuGetPackager_DownloadNuGet OutputFilename="$(_WixNuGetPackager_DownloadedNuGetExePath)" Condition=" '$(WixNuGetPackagerDownloadNuGetExe)' == 'true' AND !Exists('$(_WixNuGetPackager_DownloadedNuGetExePath)')" />
+  <Target 
+    Name="_WixNuGetPackager_DownloadNuGet"
+    Condition=" $(WixNuGetPackagerDownloadNuGetExe) == 'true' ">
+
+    <!-- Download to a temporary file, then move-if-not-exists to prevent concurrent execution problems with MSBuild parallel invocation -->
+
+    <PropertyGroup>
+        <_WixNuGetPackager_DownloadedNuGetExePath_Temp>$(_WixNuGetPackager_DownloadedNuGetExePath)_$([System.Guid]::NewGuid().ToString('N'))</_WixNuGetPackager_DownloadedNuGetExePath_Temp>
+    </PropertyGroup>
+
+    <_WixNuGetPackager_DownloadNuGet 
+        OutputFilename="$(_WixNuGetPackager_DownloadedNuGetExePath_Temp)" 
+        Condition=" !Exists( '$(_WixNuGetPackager_DownloadedNuGetExePath)' ) " />
+
+    <Move
+        SourceFiles="$(_WixNuGetPackager_DownloadedNuGetExePath_Temp)"
+        DestinationFiles="$(_WixNuGetPackager_DownloadedNuGetExePath)"
+        ContinueOnError="WarnAndContinue"
+        Condition=" Exists( '$(_WixNuGetPackager_DownloadedNuGetExePath_Temp)' ) AND !Exists( '$(_WixNuGetPackager_DownloadedNuGetExePath)' ) " />
+
+    <Delete
+        Files="$(_WixNuGetPackager_DownloadedNuGetExePath_Temp)"
+        Condition=" Exists( '$(_WixNuGetPackager_DownloadedNuGetExePath_Temp)' ) "/>
+
   </Target>
     
   <UsingTask TaskName="_WixNuGetPackager_DownloadNuGet" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
