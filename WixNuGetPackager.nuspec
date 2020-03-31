@@ -2,7 +2,7 @@
 <package>
   <metadata minClientVersion="2.5">
     <id>WixNuGetPackager</id>
-    <version>0.1.5</version>
+    <version>0.1.6</version>
     <title>WiX NuGet Packager</title>
     <authors>Zany Ants</authors>
     <owners>Zany Ants</owners>
@@ -12,9 +12,9 @@
     <summary>Enables distribution of Windows Installer XML (WiX) libraries and extensions using NuGet packages.</summary>
     <description>WixNuGetPackager enables the distribution of Windows Installer XML (WiX) libraries and extensions using NuGet packages. WixNuGetPackager is itself distributed as a NuGet package which can be installed in WiX library or extension projects. Once installed in a project, WixNuGetPackager extends the build process to generate a NuGet pacakge containing the compiled artefacts. This generated NuGet package can then be distributed and added to other WiX projects.
 </description>
-    <copyright>Copyright 2016 Zany Ants</copyright>
+    <copyright>Copyright 2020 Zany Ants</copyright>
     <tags>wix nuget wixlib library extension distribution packaging</tags>
-    <releaseNotes>Prevent problems with concurrent nuget.exe download caused by MSBuild parallel invocation.</releaseNotes>
+    <releaseNotes>Added ability to include resources from a project in the project package</releaseNotes>
   </metadata>
   <files>
     <file src="build\**" target="build" />

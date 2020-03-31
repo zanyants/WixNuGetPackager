@@ -218,6 +218,28 @@
       </WixNuGetPackagerExtensionSchema>
     </ItemGroup>
     
+    <Message Condition=" '@(Resource)' != '' "
+        Importance="High" 
+        Text="Resources found: @(Resource)" />
+    
+    <ItemGroup
+      Condition=" $(WixNuGetPackagerProjectType) == 'Library' and '@(Resource)' != '' ">
+        <WixNuGetPackagerLibraryFiles
+            Include="@(Resource)"
+            Condition=" %(Extension) != '.xsd' and %(Resource.Link) == '' ">
+            <UseRelativeDir>$([MSBuild]::MakeRelative( '$(MSBuildProjectDirectory)', '%(RootDir)%(Directory)' ))</UseRelativeDir>
+        </WixNuGetPackagerLibraryFiles>
+        <WixNuGetPackagerLibraryFiles
+            Include="@(Resource)"
+            Condition=" %(Extension) != '.xsd' and %(Resource.Link) != '' ">
+            <UseRelativeDir>$([System.IO.Path]::GetDirectoryName( '%(Resource.Link)' )</UseRelativeDir>
+        </WixNuGetPackagerLibraryFiles>
+    </ItemGroup>
+    
+    <Message Condition=" '@(WixNuGetPackagerLibraryFiles)' != '' "
+        Importance="High" 
+        Text="Unfiltered Library resources to include: @(WixNuGetPackagerLibraryFiles)" />
+    
     <RemoveDuplicates
       Condition=" $(WixNuGetPackagerProjectType) == 'Extension' and '@(WixNuGetPackagerExtensionSchema)' != '' "
       Inputs="@(WixNuGetPackagerExtensionSchema)">
@@ -228,12 +250,29 @@
         
     </RemoveDuplicates>
     
+    <RemoveDuplicates
+      Condition=" $(WixNuGetPackagerProjectType) == 'Library' and '@(WixNuGetPackagerLibraryFiles)' != '' "
+      Inputs="@(WixNuGetPackagerLibraryFiles)">
+    
+      <Output
+        TaskParameter="Filtered"
+        ItemName="_WixNuGetPackager_LibraryFilesUnique"/>
+    </RemoveDuplicates>
+    
+    <Message Condition=" '@(_WixNuGetPackager_LibraryFilesUnique)' != '' "
+        Importance="High" 
+        Text="Library resources to include: @(_WixNuGetPackager_LibraryFilesUnique)" />
+    
     <!-- Construct nuspec xml -->
     <PropertyGroup>
       <_WixNuGetPackager_ExtensionSchemaFilesXml
         Condition=" $(WixNuGetPackagerProjectType) == 'Extension' and '@(_WixNuGetPackager_ExtensionSchemaUnique)' != '' " >
         @(_WixNuGetPackager_ExtensionSchemaUnique->'&lt;file src="%(FullPath)" target="tools\payload\schema\%(UseRelativeDir)" /&gt;','')
       </_WixNuGetPackager_ExtensionSchemaFilesXml>
+      <_WixNuGetPackager_LibraryFilesXml
+        Condition=" $(WixNuGetPackagerProjectType) == 'Library' and '@(_WixNuGetPackager_LibraryFilesUnique)' != '' " >
+        @(_WixNuGetPackager_LibraryFilesUnique->'&lt;file src="%(FullPath)" target="tools\payload\output\%(UseRelativeDir)" /&gt;','')
+      </_WixNuGetPackager_LibraryFilesXml>
       <_WixNuGetPackager_NuspecXml>
         <package xmlns="">
           $(_WixNuGetPackager_MetadataElement)
@@ -241,6 +280,7 @@
             <file src="$(TargetPath)" target="tools\payload\output" />
             $(_WixNuGetPackager_ExtensionSchemaFilesXml)
             <file src="$(_WixNuGetPackager_IntermediateBuildFilesDirectory)**" target="build" />
+            $(_WixNuGetPackager_LibraryFilesXml)
           </files>
         </package>
       </_WixNuGetPackager_NuspecXml>
